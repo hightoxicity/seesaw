@@ -204,11 +204,6 @@ func (ncc *SeesawNCC) LBInterfaceUp(iface *ncctypes.LBInterface, out *int) error
 		return fmt.Errorf("Node network %s does not contain cluster VIP %s", nodeNet, iface.ClusterVIP.IPv4Addr)
 	}
 
-	gateway, err := routeDefaultIPv4()
-	if err != nil {
-		return fmt.Errorf("Failed to get IPv4 default route: %v", err)
-	}
-
 	if err := ifaceUp(netIface); err != nil {
 		return fmt.Errorf("Failed to bring interface up: %v", err)
 	}
@@ -217,8 +212,14 @@ func (ncc *SeesawNCC) LBInterfaceUp(iface *ncctypes.LBInterface, out *int) error
 	if err := ipRunIface(netIface, "route add %s dev %s table %d", nodeNet, iface.Name, iface.RoutingTableID); err != nil {
 		return fmt.Errorf("Failed to configure routing: %v", err)
 	}
-	if err := ipRunIface(netIface, "route add 0/0 via %s dev %s table %d", gateway, iface.Name, iface.RoutingTableID); err != nil {
-		return fmt.Errorf("Failed to configure routing: %v", err)
+
+	gateway, err := routeDefaultIPv4()
+	if err != nil {
+		log.Infof("Failed to get IPv4 default route: %v", err)
+	} else {
+		if err := ipRunIface(netIface, "route add 0/0 via %s dev %s table %d", gateway, iface.Name, iface.RoutingTableID); err != nil {
+			log.Infof("Failed to set IPV4 default route: %v", err)
+		}
 	}
 
 	return nil
