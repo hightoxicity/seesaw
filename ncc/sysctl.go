@@ -27,6 +27,7 @@ import (
 	"path"
 	"strings"
 
+	log "github.com/golang/glog"
 	"github.com/google/seesaw/common/seesaw"
 )
 
@@ -95,7 +96,7 @@ func sysctlInitLB(nodeIface, lbIface *net.Interface) error {
 	// System level sysctls.
 	for _, ctl := range seesawSysctls {
 		if _, err := sysctl(ctl.name, ctl.value); err != nil {
-			return err
+			log.Infof("Cannot set system level sysctl %s: %v", ctl.name, err)
 		}
 	}
 
